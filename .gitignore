@@ -1,0 +1,12 @@
+# Ignore folders
+.ipynb_checkpoints/
+.vscode/
+model/
+preprocessed dataset/
+
+# Python
+__pycache__/
+*.pyc
+
+# Uploads
+uploads/*

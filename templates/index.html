@@ -1,0 +1,43 @@
+﻿{% extends "base.html" %}
+{% set navbar_title = "Diabetic Retinopathy Classification" %}
+
+{% block nav_items %}
+  <a href="{{ url_for('index') }}">Home</a>
+  <a href="{{ url_for('login') }}">Login</a>
+  <a href="{{ url_for('register') }}">Register</a>
+  <a href="{{ url_for('prediction') }}">Prediction</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <h1>Diabetic Retinopathy Classification</h1>
+    <p>AI-powered analysis of fundus images to detect disease stages early and support faster clinical decisions.</p>
+    <div class="cta">
+      <a class="btn" href="{{ url_for('prediction') }}">Start Prediction</a>
+      <a class="btn outline" href="{{ url_for('register') }}">Create Account</a>
+    </div>
+  </div>
+  <div class="hero-images">
+    <figure>
+      <img src="{{ url_for('static', filename='images/normal-eye.jpg') }}" alt="Normal eye fundus" />
+      <figcaption>Normal Eye</figcaption>
+    </figure>
+    <figure>
+      <img src="{{ url_for('static', filename='images/diabetic-retinopathy.jpg') }}" alt="Diabetic retinopathy eye fundus" />
+      <figcaption>Diabetic Retinopathy</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="about">
+  <div class="card">
+    <h2>Problem</h2>
+    <p>Diabetic retinopathy is a leading cause of preventable blindness. Manual screening is time-consuming and resource intensive.</p>
+  </div>
+  <div class="card">
+    <h2>Solution</h2>
+    <p>This project uses a trained Xception model to classify fundus images into five stages, enabling early detection and faster triage.</p>
+  </div>
+</section>
+{% endblock %}

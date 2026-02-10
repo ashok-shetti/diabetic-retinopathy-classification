@@ -1,0 +1,52 @@
+﻿{% extends "base.html" %}
+{% set navbar_title = "DR Prediction" %}
+
+{% block nav_items %}
+  <a href="{{ url_for('index') }}">Home</a>
+  <a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<section class="prediction">
+  <div class="prediction-card">
+    <h2>Upload Fundus Image</h2>
+    <div class="preview-wrap">
+      {% if image_url %}
+        <img id="previewImage" class="preview" src="{{ image_url }}" alt="Uploaded image" />
+      {% else %}
+        <img id="previewImage" class="preview" src="{{ url_for('static', filename='images/preview-placeholder.png') }}" alt="Preview" />
+      {% endif %}
+    </div>
+    <form method="post" action="{{ url_for('predict') }}" enctype="multipart/form-data">
+      <input id="imageInput" type="file" name="file" accept="image/*" required />
+      <button class="btn" type="submit">Submit</button>
+    </form>
+    <div class="result">
+      Diabetic Retinopathy Classification is : <span>{{ prediction or "--" }}</span>
+    </div>
+  </div>
+</section>
+
+<section class="disease-cards">
+  <div class="disease-card">
+    <img src="{{ url_for('static', filename='images/no-dr.jpg') }}" alt="No disease" />
+    <h3>No disease visible</h3>
+  </div>
+  <div class="disease-card">
+    <img src="{{ url_for('static', filename='images/mild-npdr.jpg') }}" alt="Mild NPDR" />
+    <h3>Mild NPDR</h3>
+  </div>
+  <div class="disease-card">
+    <img src="{{ url_for('static', filename='images/moderate-npdr.jpg') }}" alt="Moderate NPDR" />
+    <h3>Moderate NPDR</h3>
+  </div>
+  <div class="disease-card">
+    <img src="{{ url_for('static', filename='images/severe-npdr.jpg') }}" alt="Severe NPDR" />
+    <h3>Severe NPDR</h3>
+  </div>
+  <div class="disease-card">
+    <img src="{{ url_for('static', filename='images/pdr.jpg') }}" alt="PDR" />
+    <h3>PDR</h3>
+  </div>
+</section>
+{% endblock %}

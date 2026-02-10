@@ -1,0 +1,17 @@
+﻿{% extends "base.html" %}
+{% set navbar_title = "Logged Out" %}
+
+{% block nav_items %}
+  <a href="{{ url_for('index') }}">Home</a>
+  <a href="{{ url_for('login') }}">Login</a>
+  <a href="{{ url_for('register') }}">Register</a>
+{% endblock %}
+
+{% block content %}
+<section class="logout">
+  <div class="logout-card">
+    <h2>Successfully Logged Out!</h2>
+    <a class="btn" href="{{ url_for('login') }}">Login</a>
+  </div>
+</section>
+{% endblock %}

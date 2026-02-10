@@ -1,0 +1,25 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ navbar_title or "Diabetic Retinopathy Classification" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header class="navbar dark">
+    <div class="container nav-wrap">
+      <div class="brand">{{ navbar_title or "DR Detection" }}</div>
+      <nav class="nav-links">
+        {% block nav_items %}{% endblock %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container page">
+    {% block content %}{% endblock %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
