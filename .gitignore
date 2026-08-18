@@ -1,12 +1,9 @@
-# Ignore folders
+venv/
+uploads/
+preprocessed dataset/
 .ipynb_checkpoints/
 .vscode/
-model/
-preprocessed dataset/
-
-# Python
+users.json
 __pycache__/
 *.pyc
-
-# Uploads
-uploads/*
+model/

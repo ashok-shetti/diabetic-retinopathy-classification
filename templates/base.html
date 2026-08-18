@@ -1,15 +1,18 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ navbar_title or "Diabetic Retinopathy Classification" }}</title>
+  <title>{{ page_title or "Diabetic Retinopathy Classification" }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 <body>
   <header class="navbar dark">
     <div class="container nav-wrap">
-      <div class="brand">{{ navbar_title or "DR Detection" }}</div>
+      <a href="{{ url_for('index') }}" class="brand">Diabetic Retinopathy Classification</a>
       <nav class="nav-links">
         {% block nav_items %}{% endblock %}
       </nav>

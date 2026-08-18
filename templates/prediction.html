@@ -1,52 +1,116 @@
-﻿{% extends "base.html" %}
-{% set navbar_title = "DR Prediction" %}
+{% extends "base.html" %}
+{% set page_title = "Screening Workspace | Diabetic Retinopathy Classification" %}
 
 {% block nav_items %}
   <a href="{{ url_for('index') }}">Home</a>
+  <a href="{{ url_for('prediction') }}" class="active">Prediction</a>
   <a href="{{ url_for('logout') }}">Logout</a>
 {% endblock %}
 
 {% block content %}
-<section class="prediction">
-  <div class="prediction-card">
-    <h2>Upload Fundus Image</h2>
-    <div class="preview-wrap">
-      {% if image_url %}
-        <img id="previewImage" class="preview" src="{{ image_url }}" alt="Uploaded image" />
+<section class="prediction-layout">
+  <div class="prediction-workspace">
+    <!-- Upload Workspace Card -->
+    <div class="workspace-card">
+      <h2>Retinal Scan Upload</h2>
+      <p class="workspace-desc" style="margin-bottom: 24px; color: var(--text-muted); font-size: 1.05rem;">Upload a digital fundus photograph (PNG, JPG, or JPEG) to analyze for signs of diabetic retinopathy.</p>
+      
+      <form method="post" action="{{ url_for('predict') }}" enctype="multipart/form-data" id="predictionForm">
+        <div class="dropzone" id="dropzone">
+          <input id="imageInput" type="file" name="file" accept="image/*" required style="display: none;" />
+          
+          <div class="dropzone-content" id="dropzoneContent" {% if image_url %}style="display: none;"{% endif %}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="upload-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <p class="dropzone-text" style="font-size: 1.1rem;">Drag & drop retina fundus image here</p>
+            <span class="dropzone-or">or</span>
+            <button type="button" class="btn btn-sm outline" id="browseBtn">Browse File</button>
+          </div>
+          
+          <div class="preview-container {% if image_url %}active{% endif %}" id="previewContainer">
+            <img id="previewImage" class="preview-img" src="{{ image_url or '' }}" alt="Uploaded Image Preview" {% if not image_url %}style="display: none;"{% endif %} />
+            <div class="file-info" id="fileInfo"></div>
+          </div>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn btn-lg" type="submit" id="submitBtn" {% if not image_url %}disabled{% endif %}>
+            Analyze Image
+          </button>
+          {% if image_url %}
+            <a href="{{ url_for('prediction') }}" class="btn btn-lg outline">Analyze Another Image</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    <!-- Prediction Results Card -->
+    <div class="results-card">
+      <span class="result-header">Analysis Result</span>
+      {% if prediction %}
+        {% if prediction == "No DR" %}
+          <div class="result-badge no-dr">No Diabetic Retinopathy</div>
+        {% elif prediction == "Mild NPDR" %}
+          <div class="result-badge mild">Mild NPDR</div>
+        {% elif prediction == "Moderate NPDR" %}
+          <div class="result-badge moderate">Moderate NPDR</div>
+        {% elif prediction == "Severe NPDR" %}
+          <div class="result-badge severe">Severe NPDR</div>
+        {% elif prediction == "PDR" %}
+          <div class="result-badge pdr">Proliferative DR (PDR)</div>
+        {% else %}
+          <div class="result-badge pdr">{{ prediction }}</div>
+        {% endif %}
+        <p class="result-desc" style="font-size: 1.05rem; color: var(--text-muted);">The model classified this fundus image into the highlighted category.</p>
       {% else %}
-        <img id="previewImage" class="preview" src="{{ url_for('static', filename='images/preview-placeholder.png') }}" alt="Preview" />
+        <div class="result-badge" style="background-color: var(--text-muted); opacity: 0.3;">--</div>
+        <p class="result-desc" style="font-size: 1.05rem; color: var(--text-muted);">Awaiting upload. Select a fundus image and click 'Analyze Image' to run the classification model.</p>
       {% endif %}
     </div>
-    <form method="post" action="{{ url_for('predict') }}" enctype="multipart/form-data">
-      <input id="imageInput" type="file" name="file" accept="image/*" required />
-      <button class="btn" type="submit">Submit</button>
-    </form>
-    <div class="result">
-      Diabetic Retinopathy Classification is : <span>{{ prediction or "--" }}</span>
+  </div>
+
+  <!-- Disease Class Cards -->
+  <div>
+    <h2 class="stages-section-title">Classification Categories</h2>
+    <div class="disease-cards">
+      <div class="disease-card {% if prediction == 'No DR' %}highlighted highlight-no-dr{% endif %}">
+        <img src="{{ url_for('static', filename='images/no-dr.jpg') }}" alt="No DR" />
+        <h3 class="class-label" style="font-size: 1.1rem; font-weight: 700;">No Diabetic Retinopathy</h3>
+      </div>
+      <div class="disease-card {% if prediction == 'Mild NPDR' %}highlighted highlight-mild{% endif %}">
+        <img src="{{ url_for('static', filename='images/mild-npdr.jpg') }}" alt="Mild NPDR" />
+        <h3 class="class-label" style="font-size: 1.1rem; font-weight: 700;">Mild NPDR</h3>
+      </div>
+      <div class="disease-card {% if prediction == 'Moderate NPDR' %}highlighted highlight-moderate{% endif %}">
+        <img src="{{ url_for('static', filename='images/moderate-npdr.jpg') }}" alt="Moderate NPDR" />
+        <h3 class="class-label" style="font-size: 1.1rem; font-weight: 700;">Moderate NPDR</h3>
+      </div>
+      <div class="disease-card {% if prediction == 'Severe NPDR' %}highlighted highlight-severe{% endif %}">
+        <img src="{{ url_for('static', filename='images/severe-npdr.jpg') }}" alt="Severe NPDR" />
+        <h3 class="class-label" style="font-size: 1.1rem; font-weight: 700;">Severe NPDR</h3>
+      </div>
+      <div class="disease-card {% if prediction == 'PDR' %}highlighted highlight-pdr{% endif %}">
+        <img src="{{ url_for('static', filename='images/pdr.jpg') }}" alt="PDR" />
+        <h3 class="class-label" style="font-size: 1.1rem; font-weight: 700;">PDR</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer Section -->
+  <div class="meta-section" style="grid-template-columns: 1fr; margin-top: 40px;">
+    <div class="disclaimer-card" style="background: #fef2f2; border: 1px solid #fee2e2; padding: 24px; border-radius: var(--radius-md); text-align: center;">
+      <p style="color: #7f1d1d; font-weight: 600; font-size: 1.05rem;">
+        For educational and demonstration purposes only. This application is not a substitute for professional medical diagnosis.
+      </p>
     </div>
   </div>
 </section>
 
-<section class="disease-cards">
-  <div class="disease-card">
-    <img src="{{ url_for('static', filename='images/no-dr.jpg') }}" alt="No disease" />
-    <h3>No disease visible</h3>
-  </div>
-  <div class="disease-card">
-    <img src="{{ url_for('static', filename='images/mild-npdr.jpg') }}" alt="Mild NPDR" />
-    <h3>Mild NPDR</h3>
-  </div>
-  <div class="disease-card">
-    <img src="{{ url_for('static', filename='images/moderate-npdr.jpg') }}" alt="Moderate NPDR" />
-    <h3>Moderate NPDR</h3>
-  </div>
-  <div class="disease-card">
-    <img src="{{ url_for('static', filename='images/severe-npdr.jpg') }}" alt="Severe NPDR" />
-    <h3>Severe NPDR</h3>
-  </div>
-  <div class="disease-card">
-    <img src="{{ url_for('static', filename='images/pdr.jpg') }}" alt="PDR" />
-    <h3>PDR</h3>
-  </div>
-</section>
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Analyzing retina scans...</div>
+  <div class="loading-subtext">Executing Xception CNN inference on TensorFlow backend</div>
+</div>
 {% endblock %}

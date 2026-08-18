@@ -1,5 +1,5 @@
-﻿{% extends "base.html" %}
-{% set navbar_title = "Logged Out" %}
+{% extends "base.html" %}
+{% set page_title = "Logged Out | Diabetic Retinopathy Classification" %}
 
 {% block nav_items %}
   <a href="{{ url_for('index') }}">Home</a>
@@ -10,8 +10,10 @@
 {% block content %}
 <section class="logout">
   <div class="logout-card">
-    <h2>Successfully Logged Out!</h2>
-    <a class="btn" href="{{ url_for('login') }}">Login</a>
+    <div class="logout-icon">🔓</div>
+    <h2>Successfully Logged Out</h2>
+    <p class="subtitle" style="color: var(--text-muted); margin-bottom: 8px;">Your session has been securely ended.</p>
+    <a class="btn" href="{{ url_for('login') }}" style="margin-top: 12px;">Log Back In</a>
   </div>
 </section>
 {% endblock %}

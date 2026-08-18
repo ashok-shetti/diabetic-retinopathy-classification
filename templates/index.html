@@ -1,43 +1,58 @@
-﻿{% extends "base.html" %}
-{% set navbar_title = "Diabetic Retinopathy Classification" %}
+{% extends "base.html" %}
+{% set page_title = "Home | Diabetic Retinopathy Classification" %}
 
 {% block nav_items %}
-  <a href="{{ url_for('index') }}">Home</a>
-  <a href="{{ url_for('login') }}">Login</a>
-  <a href="{{ url_for('register') }}">Register</a>
-  <a href="{{ url_for('prediction') }}">Prediction</a>
+  <a href="{{ url_for('index') }}" class="active">Home</a>
+  {% if session.get('user_email') %}
+    <a href="{{ url_for('prediction') }}">Prediction</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  {% else %}
+    <a href="{{ url_for('login') }}">Login</a>
+    <a href="{{ url_for('register') }}">Register</a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
 <section class="hero">
   <div class="hero-text">
     <h1>Diabetic Retinopathy Classification</h1>
-    <p>AI-powered analysis of fundus images to detect disease stages early and support faster clinical decisions.</p>
+    <p class="tech-line" style="font-weight: 700; color: var(--teal-primary); font-size: 1.05rem; letter-spacing: 0.5px;">CNN · TensorFlow/Keras · APTOS 2019 · Flask</p>
+    <p>Deep learning-based classification of retinal fundus images across five diabetic retinopathy severity levels.</p>
     <div class="cta">
-      <a class="btn" href="{{ url_for('prediction') }}">Start Prediction</a>
-      <a class="btn outline" href="{{ url_for('register') }}">Create Account</a>
+      <a class="btn btn-lg" href="{{ url_for('prediction') }}">Start Prediction</a>
+      {% if not session.get('user_email') %}
+        <a class="btn btn-lg outline" href="{{ url_for('register') }}">Create Account</a>
+      {% endif %}
     </div>
   </div>
   <div class="hero-images">
     <figure>
       <img src="{{ url_for('static', filename='images/normal-eye.jpg') }}" alt="Normal eye fundus" />
-      <figcaption>Normal Eye</figcaption>
+      <figcaption>Normal Retina</figcaption>
     </figure>
     <figure>
       <img src="{{ url_for('static', filename='images/diabetic-retinopathy.jpg') }}" alt="Diabetic retinopathy eye fundus" />
-      <figcaption>Diabetic Retinopathy</figcaption>
+      <figcaption>Diabetic Retina</figcaption>
     </figure>
   </div>
 </section>
 
-<section class="about">
-  <div class="card">
-    <h2>Problem</h2>
-    <p>Diabetic retinopathy is a leading cause of preventable blindness. Manual screening is time-consuming and resource intensive.</p>
+<section class="about" style="margin-bottom: 32px;">
+  <div class="card problem">
+    <h2>The Problem</h2>
+    <p>Diabetic retinopathy is a leading cause of blindness worldwide. Regular screening is critical, yet manual ophthalmological evaluations are resource-intensive, slow, and often inaccessible in underserved healthcare sectors.</p>
   </div>
-  <div class="card">
-    <h2>Solution</h2>
-    <p>This project uses a trained Xception model to classify fundus images into five stages, enabling early detection and faster triage.</p>
+  <div class="card solution">
+    <h2>The Solution</h2>
+    <p>This project uses an Xception CNN trained on retinal fundus images to classify diabetic retinopathy into five severity levels through a Flask web application.</p>
+  </div>
+</section>
+
+<section class="meta-section" style="grid-template-columns: 1fr; margin-top: 0;">
+  <div class="disclaimer-card" style="background: #fef2f2; border: 1px solid #fee2e2; padding: 24px; border-radius: var(--radius-md); text-align: center;">
+    <p style="color: #7f1d1d; font-weight: 600; font-size: 0.95rem;">
+      For educational and demonstration purposes only. This application is not a substitute for professional medical diagnosis.
+    </p>
   </div>
 </section>
 {% endblock %}
