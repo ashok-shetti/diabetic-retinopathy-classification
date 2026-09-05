@@ -1,194 +1,449 @@
 # Diabetic Retinopathy Classification
 
-A Deep Learning application for classifying diabetic retinopathy severity from retinal images using an ImageNet-pretrained Xception model and a Flask web interface.
+A deep learning web application that classifies retinal fundus images into five diabetic retinopathy severity stages using an ImageNet-pretrained Xception model and a Flask interface.
 
-## Features
+The project combines transfer learning, image preprocessing, model inference, and a simple web workflow with local user authentication and image upload.
 
-- User registration and login
-- Retinal image upload with validation
-- Five-class diabetic retinopathy classification
-- Xception-based model inference
-- Predicted severity label display
+> **Note:** This is an educational/experimental prototype and is **not suitable for clinical diagnosis or real-world medical screening**.
 
-## Authentication
+---
 
-The application includes a basic user registration and login system.
+## Screenshots
 
-- User details are stored in `users.json`.
-- Passwords are stored as Werkzeug-generated password hashes rather than plain text.
-- Login credentials are validated using the stored password hashes.
-- Flask sessions are used to maintain authenticated user sessions.
+| Home & Detection Flow | Authentication (Login / Register) |
+| :---: | :---: |
+| <img src="screenshots/Home%20Page.png" alt="Home Page" width="380"> | <img src="screenshots/Login%20Page.png" alt="Login Page" width="380"> |
+| **Prediction Interface** | **Register Account** |
+| <img src="screenshots/Prediction%20Page.png" alt="Prediction Page" width="380"> | <img src="screenshots/Register%20Page.png" alt="Register Page" width="380"> |
 
-> **Note:** Authentication data is stored locally in a JSON file; no database is used for user authentication.
+---
 
+## How It Works
 
-## Tech Stack
+```text
+APTOS 2019 Fundus Images
+          │
+          ▼
+Resize to 299 × 299
+          │
+          ▼
+Xception Preprocessing
++ Training Augmentation
+          │
+          ▼
+ImageNet-pretrained Xception
+        (Frozen)
+          │
+          ▼
+Flatten → Dense(256)
+→ Dropout(0.5) → Dense(5)
+          │
+          ▼
+5-Class Softmax Prediction
+          │
+          ▼
+Flask Web Application
+          │
+          ▼
+Predicted DR Severity
+```
 
-- **Language:** Python 3.10+
-- **Web Framework:** Flask
-- **Deep Learning:** TensorFlow, Keras, Xception
-- **Image Processing:** NumPy, Pillow
-- **Model Format:** H5
+The model predicts one of:
+
+- No DR
+- Mild NPDR
+- Moderate NPDR
+- Severe NPDR
+- PDR
+
+---
 
 ## Dataset
 
-This project uses the **APTOS 2019 Blindness Detection** dataset, originally published on Kaggle.
+The project uses the **APTOS 2019 Blindness Detection** dataset.
 
-The dataset contains retinal images classified into five diabetic retinopathy severity levels:
+| Split | Images |
+|---|---:|
+| Training | 3,662 |
+| Testing / Validation | 734 |
+| Total | 4,396 |
 
-- **No DR**
-- **Mild NPDR**
-- **Moderate NPDR**
-- **Severe NPDR**
-- **PDR**
+The dataset contains five severity classes:
 
-### Dataset Split
+| Class | Label |
+|---|---|
+| 0 | No DR |
+| 1 | Mild NPDR |
+| 2 | Moderate NPDR |
+| 3 | Severe NPDR |
+| 4 | PDR |
 
-| Split | Images | Classes |
-|---|---:|---:|
-| Training | 3,662 | 5 |
-| Testing | 734 | 5 |
+The training data is imbalanced. For example, No DR represents about 49.3% of the training set, while Severe NPDR represents about 5.3%.
 
-## Model Architecture
+No class weighting, SMOTE, oversampling, focal loss, or undersampling was used.
 
-The project uses **Xception** with pretrained **ImageNet weights** as the feature extraction base.
+> The `testing` directory was used as `validation_data` during training. It was therefore not an independent blind test set.
 
-The Xception base layers are frozen during training, and only the custom classification head is trained for the five diabetic retinopathy severity classes.
+---
+
+## Model
+
+The project uses **Xception with ImageNet pretrained weights** as the convolutional feature extractor.
+
+The Xception base is completely frozen and a custom classification head is trained on top:
 
 ```text
-Input Image (299 × 299)
-        │
-        ▼
-Xception (ImageNet Pretrained)
-        │
-        │ Frozen Base
-        ▼
+Xception Base
+    │
+    ▼
+10 × 10 × 2048 Feature Map
+    │
+    ▼
 Flatten
-        │
-        ▼
-Dense (256, ReLU)
-        │
-        ▼
-Dropout (0.5)
-        │
-        ▼
-Dense (5, Softmax)
-        │
-        ▼
-DR Severity Class
+    │
+    ▼
+Dense(256, ReLU)
+    │
+    ▼
+Dropout(0.5)
+    │
+    ▼
+Dense(5, Softmax)
 ```
 
-### Classification Classes
+### Model Size
 
-The final softmax layer predicts one of five classes:
+- Total parameters: **73.29M**
+- Trainable parameters: **52.43M**
+- Non-trainable parameters: **20.86M**
 
-1. No DR
-2. Mild NPDR
-3. Moderate NPDR
-4. Severe NPDR
-5. PDR
+The large trainable parameter count comes mainly from flattening the `10 × 10 × 2048` Xception feature map before the dense layer.
 
-## Training Configuration
+---
 
-The Xception base model was kept frozen while the custom classification head was trained using the following configuration:
+## Training
 
-| Parameter | Value |
-|---|---|
-| Image Size | 299 × 299 |
-| Batch Size | 32 |
-| Maximum Epochs | 30 |
-| Optimizer | Adam |
-| Learning Rate | 0.001 |
-| Loss Function | Categorical Crossentropy |
-| Metric | Accuracy |
-| Early Stopping | Patience = 5 |
+Training was performed using TensorFlow/Keras.
 
-Training stopped early at **Epoch 19**, with the best validation accuracy of **73.58%** achieved at **Epoch 14**. The best model weights were restored after early stopping.
+### Configuration
+
+- Optimizer: Adam
+- Loss: Categorical Crossentropy
+- Batch size: 32
+- Maximum epochs: 30
+- Actual epochs: 19
+- Early stopping patience: 5
+- Input size: 299 × 299
+- Output classes: 5
+
+### Training Augmentation
+
+The training pipeline applies:
+
+- Rotation: ±20°
+- Width shift: 10%
+- Height shift: 10%
+- Zoom: 20%
+- Brightness: 0.8–1.2
+- Horizontal flip
+
+The Xception `preprocess_input` function is used during training, scaling image values from `[0, 255]` to `[-1, 1]`.
+
+---
 
 ## Results
 
-The model achieved the following performance during training:
+The best recorded validation result occurred at **Epoch 14**:
 
 | Metric | Result |
 |---|---:|
-| Best Validation Accuracy | **73.58%** |
-| Training Accuracy at Best Epoch | **75.00%** |
-| Best Epoch | **14** |
+| Validation Accuracy | **73.58%** |
+| Validation Loss | **0.73374** |
+| Training Accuracy | 75.00% |
+| Training Loss | 0.7502 |
 
-Training continued until **Epoch 19**, when the EarlyStopping callback terminated training. The weights from the best-performing epoch were restored.
+Training stopped at Epoch 19 after validation loss stopped improving, and the best weights from Epoch 14 were restored.
 
-> **Note:** Precision, Recall, F1 Score, and a confusion matrix were not calculated as part of the original training workflow.
+### Evaluation Limitation
+
+The project currently evaluates the model primarily using accuracy.
+
+The following were **not implemented**:
+
+- Confusion matrix
+- Precision
+- Recall
+- F1-score
+- Specificity
+- ROC-AUC
+- Quadratic weighted kappa
+- Per-class error analysis
+
+Therefore, the 73.58% figure should be treated as a validation result, not as a complete evaluation of clinical or per-class performance.
+
+---
+
+## Web Application
+
+The Flask application provides:
+
+- User registration
+- Login and logout
+- Password hashing with Werkzeug
+- Session-based authentication
+- Drag-and-drop image upload
+- Image preview before submission
+- PNG/JPG/JPEG validation
+- Secure filename handling
+- UUID-prefixed uploaded filenames
+- Model inference
+- Predicted severity display
+- Reference cards for the five severity stages
+
+The prediction flow is:
+
+```text
+User Login
+    │
+    ▼
+Upload Fundus Image
+    │
+    ▼
+Validate Image
+    │
+    ▼
+Convert to RGB
+    │
+    ▼
+Resize to 299 × 299
+    │
+    ▼
+Normalize Image
+    │
+    ▼
+Xception Model
+    │
+    ▼
+Softmax Output
+    │
+    ▼
+Argmax
+    │
+    ▼
+Predicted Severity Label
+```
+
+---
+
+## Important Technical Details
+
+### Transfer Learning
+
+The project uses an ImageNet-pretrained Xception model rather than training a CNN from scratch.
+
+The complete Xception feature extractor remains frozen, while the custom classification head is trained.
+
+### Early Stopping
+
+Training monitors validation loss:
+
+```python
+EarlyStopping(
+    monitor="val_loss",
+    patience=5,
+    restore_best_weights=True
+)
+```
+
+A model checkpoint is also saved whenever validation loss improves.
+
+### Keras 3 Compatibility
+
+The Flask application includes a compatibility helper for older HDF5 model files.
+
+If Keras 3 raises a deserialization error related to `batch_shape`, the application patches the HDF5 model configuration before loading it.
+
+### File Upload Handling
+
+Uploaded filenames are sanitized with `secure_filename()` and prefixed with a UUID to reduce filename collisions.
+
+---
 
 ## Project Structure
 
 ```text
 diabetic-retinopathy-classification/
-├── app.py                 # Flask application and model inference
-├── requirements.txt       # Python dependencies
-├── templates/             # HTML templates
-├── static/                # CSS and JavaScript assets
-└── README.md              # Project documentation
+├── app.py
+├── requirements.txt
+├── README.md
+├── Xception_Diabetic_retinopathy.ipynb
+├── users.json
+├── model/
+│   ├── best_xception_model.h5
+│   └── Updated-Xception-diabetic-retinopathy.h5
+├── preprocessed dataset/
+│   ├── training/
+│   │   ├── 0/
+│   │   ├── 1/
+│   │   ├── 2/
+│   │   ├── 3/
+│   │   └── 4/
+│   └── testing/
+│       ├── 0/
+│       ├── 1/
+│       ├── 2/
+│       ├── 3/
+│       └── 4/
+├── templates/
+│   ├── base.html
+│   ├── index.html
+│   ├── login.html
+│   ├── register.html
+│   ├── logout.html
+│   └── prediction.html
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── script.js
+│   └── images/
+├── uploads/
+└── screenshots/
+    ├── Home Page.png
+    ├── Login Page.png
+    ├── Prediction Page.png
+    └── Register Page.png
 ```
-### Local / Runtime Files
 
-The following files and directories are used locally or generated at runtime and are excluded from Git:
+> The trained `.h5` model files are approximately 713 MB each locally and may not be included in the GitHub repository because of their size.
 
-- `model/best_xception_model.h5` — trained Xception model (~680 MB)
-- `users.json` — locally stored user account data and password hashes
-- `uploads/` — runtime directory for uploaded retinal images
+---
 
-## Setup
+## Installation
 
-1. Create and activate a clean environment.
+### 1. Clone the repository
 
-```powershell
-conda create -n dr310 python=3.10 -y
-conda activate dr310
+```bash
+git clone https://github.com/ashok-shetti/diabetic-retinopathy-classification.git
+cd diabetic-retinopathy-classification
 ```
 
-2. Install dependencies.
+### 2. Create a virtual environment
 
-```powershell
+```bash
+python -m venv venv
+```
+
+Activate it on Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-3. Add the trained model.
+### 4. Add the trained model
 
-The trained Xception model is not included in this repository because the `.h5` model file is approximately **680 MB**.
-
-Place the model at:
+Place the trained model file at:
 
 ```text
 model/best_xception_model.h5
 ```
 
-The application uses this path by default. To use a different model location, set the `MODEL_PATH` environment variable.
+The application loads this model for inference.
 
-## Run
-```powershell
+### 5. Run the Flask application
+
+```bash
 python app.py
 ```
 
-App runs locally at `http://127.0.0.1:5000/`.
+Then open:
 
-## Screenshots
+```text
+http://127.0.0.1:5000
+```
 
-The application includes the following interface screens:
+---
 
-- **Registration & Login:** User authentication interface.
-- **Image Upload:** Interface for uploading retinal images for prediction.
-- **Prediction Result:** Displays the predicted diabetic retinopathy severity class.
+## Tech Stack
 
-## Configuration
+| Area | Technologies |
+|---|---|
+| Machine Learning | Python, TensorFlow, Keras, Xception, Transfer Learning, ImageDataGenerator, NumPy |
+| Backend | Flask, Werkzeug, Gunicorn |
+| Computer Vision | Pillow, Image Preprocessing, Image Resizing, Data Augmentation |
+| Frontend | HTML5, Jinja2, CSS3, JavaScript |
+| Storage | JSON-based Local User Storage, Local Filesystem, HDF5 Model Files |
 
-The application supports the following environment variables:
+---
 
-- `MODEL_PATH`: Optional path to the trained `.h5` model. Defaults to `model/best_xception_model.h5`.
-- `SECRET_KEY`: Secret key used by Flask for session management.
+## Current Limitations
 
-## Compatibility Notes
+This project has several known limitations:
 
-The application includes a compatibility patch in `app.py` for legacy `batch_shape` serialization in the `.h5` model.
+1. **Training/inference preprocessing mismatch**
 
-If TensorFlow/Keras compatibility errors occur, use the versions specified in `requirements.txt` within a clean Python environment.
+   Training uses Xception preprocessing with values in `[-1, 1]`, while the Flask inference code currently scales images to `[0, 1]` using `/255.0`.
 
+2. **Class imbalance**
+
+   The model was trained on an imbalanced dataset without class weighting or other imbalance-handling techniques.
+
+3. **Large classification head**
+
+   `Flatten()` produces 204,800 features before the dense layer, resulting in more than 52 million trainable parameters.
+
+4. **Limited evaluation**
+
+   Only validation accuracy and loss were recorded. There is no confusion matrix or per-class precision/recall/F1 analysis.
+
+5. **No independent blind test set**
+
+   The testing directory was used for validation during training, including early stopping and model selection.
+
+6. **No confidence score in the UI**
+
+   The application displays only the predicted class and does not show the softmax probabilities.
+
+7. **File-based authentication**
+
+   User information is stored in `users.json`, which is suitable for a small local prototype but is not designed for concurrent production use.
+
+8. **No explainability**
+
+   The application does not provide Grad-CAM, saliency maps, or other visual explanations for predictions.
+
+9. **No automated ophthalmic preprocessing**
+
+   The project does not implement automated retina cropping, black-border removal, or specialized illumination/color normalization.
+
+---
+
+## Future Improvements
+
+Possible improvements include:
+
+- Fix the training/inference normalization mismatch
+- Replace `Flatten()` with `GlobalAveragePooling2D()`
+- Add class weighting or focal loss
+- Add confusion matrix and per-class metrics
+- Create a separate blind test set
+- Display prediction confidence
+- Add Grad-CAM visualizations
+- Add better retinal image preprocessing
+- Replace JSON authentication with a database
+- Reduce model size and memory requirements
+- Evaluate the model using clinically relevant metrics
+
+---
+
+## Disclaimer
+
+This project is an **educational and experimental deep learning prototype**.
+
+It should **not** be used for medical diagnosis, treatment decisions, or real-world clinical screening. The reported 73.58% result is a validation accuracy from the project's training workflow and does not establish clinical performance or reliability.
